@@ -5,10 +5,14 @@
 #include <math.h>
 #include <cmath>
 #include <chrono>
+#include <thread>
+#include <vector>
 
 using namespace std::chrono;
 using namespace std;
 
+
+std::vector <std::thread> th_vec;
 
 typedef double(*pointFunc)(double);
 
@@ -18,7 +22,7 @@ inline double f(double x) {
     return  6 / sqrt(x*(2-x));
 }
 
-double left_rectangle_integral(double a, double b, int n)
+void left_rectangle_integral(double a, double b, int n)
 {
     double Res = 0.0;
     double h = (b - a) / n;
@@ -38,10 +42,15 @@ double left_rectangle_integral(double a, double b, int n)
         Res += y[i];
     }
 
-    return Res * h;
+    double s1 = Res * h;
+    cout << "Left integral = " << s1 << endl;
+    cout << "Count of intervals = " << n << endl;
+    // ѕосчитаем точность в процентах, зна€ что при аналитическом решении ответ будет равен 1 Pi
+    cout << "Accuracy (%) = " << 100 - (abs(M_PI - s1) / M_PI * 100) << endl;
+
 }
 
-double right_rectangle_integral(double a, double b, int n)
+void right_rectangle_integral(double a, double b, int n)
 {
     double Res = 0.0;
     double h = (b - a) / n;
@@ -61,36 +70,34 @@ double right_rectangle_integral(double a, double b, int n)
         Res += y[i];
     }
 
-    return Res * h;
+    double s1 = Res * h;
+
+    cout << "Right integral = " << s1 << endl;
+    cout << "Count of intervals = " << n << endl;
+    cout << "Accuracy (%) = " << 100 - (abs(M_PI - s1) / M_PI * 100) << endl;
+
 }
 
 int main() {
     double a = 0.5, b = 1;
-    double s1;
     int n;
     int intervals[] = { 100, 1000, 10000, 100000, 1000000 };
 
     for (int i = 0; i < sizeof(intervals) / sizeof(int); i++) {
         n = intervals[i];
-        cout << "Count of intervals = " << n << endl;
-
         cout << fixed;
         cout << setprecision(10);
 
         high_resolution_clock::time_point t1 = high_resolution_clock::now();
-        s1 = left_rectangle_integral(a, b, n);
+        thread thread1(left_rectangle_integral, a, b, n);
 
-        cout << "Left integral = " << s1 << endl;
-        // ѕосчитаем точность в процентах, зна€ что при аналитическом решении ответ будет равен 1 Pi
-        cout << "Accuracy (%) = " << 100 - (abs(M_PI - s1) / M_PI * 100) << endl;
-
-        s1 = right_rectangle_integral(a, b, n);
-        cout << "Right integral = " << s1 << endl;
-        cout << "Accuracy (%) = " << 100 - (abs(M_PI - s1) / M_PI * 100) << endl;
+        thread thread2(right_rectangle_integral, a, b, n);
 
         high_resolution_clock::time_point t2 = high_resolution_clock::now();
         duration<double> duration = (t2 - t1);
         cout << "Duration is: " << duration.count() << " seconds" << endl << endl;
+        thread1.join();
+        thread2.join();
     }
 
     system("pause");
