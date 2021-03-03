@@ -32,7 +32,7 @@ void left_rectangle_integral(double a, double b, int n)
 
     // #pragma loop(ivdep)
     // #pragma loop(hint_parallel(8))
-    #pragma loop(no_vector)
+    // #pragma loop(no_vector)
     for (i = 0; i < n; i++) {
         x = a + h * i;
         y[i] = 6 / sqrt(x * (2 - x));
@@ -60,7 +60,7 @@ void right_rectangle_integral(double a, double b, int n)
     
     // #pragma loop(ivdep)
     // #pragma loop(hint_parallel(8))
-    #pragma loop(no_vector)
+    // #pragma loop(no_vector)
     for (i = 1; i <= n; i++) {
         x = a + h * i;
         y[i - 1] = 6 / sqrt(x * (2 - x));
