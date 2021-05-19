@@ -7,6 +7,7 @@
 #include <chrono>
 #include <thread>
 #include <vector>
+#include "D:\Program Files\oneAPI\advisor\2021.1.1\include\advisor-annotate.h"
 
 using namespace std::chrono;
 using namespace std;
@@ -16,10 +17,8 @@ std::vector <std::thread> th_vec;
 
 typedef double(*pointFunc)(double);
 
-// почему-то инлайн функция не помогла избавиться от ошибки 1200 векторизатора, 
-// заменил вызов функции на ее содержимое, костыли наше всё :)
 inline double f(double x) {
-    return  6 / sqrt(x*(2-x));
+    return  6 / sqrt(x * (2 - x));
 }
 
 void left_rectangle_integral(double a, double b, int n)
@@ -32,11 +31,14 @@ void left_rectangle_integral(double a, double b, int n)
 
     // #pragma loop(ivdep)
     // #pragma loop(hint_parallel(8))
-    // #pragma loop(no_vector)
+    ANNOTATE_SITE_BEGIN(solve);
+    //#pragma omp parallel for
+    #pragma loop(no_vector)
     for (i = 0; i < n; i++) {
-        x = a + h * i;
-        y[i] = 6 / sqrt(x * (2 - x));
+        ANNOTATE_ITERATION_TASK(setQueen);
+        y[i] = 6 / sqrt((a + h * i) * (2 - (a + h * i)));
     }
+    ANNOTATE_SITE_END();
 
     for (i = 0; i < n; i++) {
         Res += y[i];
@@ -45,7 +47,7 @@ void left_rectangle_integral(double a, double b, int n)
     double s1 = Res * h;
     cout << "Left integral = " << s1 << endl;
     cout << "Count of intervals = " << n << endl;
-    // Посчитаем точность в процентах, зная что при аналитическом решении ответ будет равен 1 Pi
+    
     cout << "Accuracy (%) = " << 100 - (abs(M_PI - s1) / M_PI * 100) << endl;
 
 }
@@ -54,13 +56,15 @@ void right_rectangle_integral(double a, double b, int n)
 {
     double Res = 0.0;
     double h = (b - a) / n;
-    double *y = new double[n];
+    double* y = new double[n];
     double x;
     int i;
-    
+
     // #pragma loop(ivdep)
     // #pragma loop(hint_parallel(8))
-    // #pragma loop(no_vector)
+    
+    // #pragma omp parallel for
+    #pragma loop(no_vector)
     for (i = 1; i <= n; i++) {
         x = a + h * i;
         y[i - 1] = 6 / sqrt(x * (2 - x));
@@ -89,17 +93,16 @@ int main() {
         cout << setprecision(10);
 
         high_resolution_clock::time_point t1 = high_resolution_clock::now();
-        thread thread1(left_rectangle_integral, a, b, n);
-
-        thread thread2(right_rectangle_integral, a, b, n);
-
+        // thread thread1(left_rectangle_integral, a, b, n);
+        // thread thread2(right_rectangle_integral, a, b, n);
+        left_rectangle_integral(a, b, n);
+        right_rectangle_integral(a, b, n);
         high_resolution_clock::time_point t2 = high_resolution_clock::now();
         duration<double> duration = (t2 - t1);
         cout << "Duration is: " << duration.count() << " seconds" << endl << endl;
-        thread1.join();
-        thread2.join();
+        // thread1.join();
+        // thread2.join();
     }
 
     system("pause");
 }
-
